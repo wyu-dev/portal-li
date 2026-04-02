@@ -455,6 +455,85 @@ input::placeholder, textarea::placeholder { color: #bbb; }
 /* Divider */
 .divider { height: 1px; background: var(--grey2); margin: 24px 0; }
 
+/* Kehadiran status buttons */
+.hadir-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.hadir-btn {
+  padding: 12px 10px;
+  border: 2px solid var(--grey2);
+  border-radius: var(--radius);
+  background: var(--white);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mid);
+  text-align: center;
+  transition: all 0.18s;
+  line-height: 1.4;
+}
+.hadir-btn:hover { border-color: var(--blue); color: var(--blue); }
+.hadir-btn.selected { border-color: var(--blue); background: var(--blue-lt); color: var(--blue); font-weight: 700; }
+.hadir-btn.sel-tidakhadir.selected { border-color: #e53535; background: #fff0f0; color: #e53535; }
+.hadir-btn.sel-tugasan.selected { border-color: #d97706; background: #fffbeb; color: #d97706; }
+.hadir-btn.sel-sakit.selected { border-color: #7c3aed; background: #f5f3ff; color: #7c3aed; }
+.hadir-btn.sel-kecemasan.selected { border-color: #0891b2; background: #ecfeff; color: #0891b2; }
+.hadir-btn.sel-lain.selected { border-color: var(--mid); background: var(--grey); color: var(--black); }
+
+/* Hadir today card */
+.today-card {
+  background: var(--grey);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.today-done {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--white);
+  border: 1.5px solid var(--grey2);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.today-done-icon { font-size: 28px; }
+.today-done-info { flex: 1; }
+.today-done-status { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+.today-done-ts { font-size: 10px; color: var(--mid); margin-top: 2px; }
+
+/* Rekod list */
+.rekod-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--grey);
+  border-radius: 4px;
+  margin-bottom: 2px;
+  gap: 10px;
+}
+.rekod-tarikh { font-size: 12px; font-weight: 600; color: var(--black); white-space: nowrap; }
+.rekod-catatan { font-size: 10px; color: var(--mid); margin-top: 1px; }
+.hadir-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+.hb-hadir { background: #dcfce7; color: #15803d; }
+.hb-tidak { background: #fee2e2; color: #b91c1c; }
+.hb-tugasan { background: #fef9c3; color: #92400e; }
+.hb-sakit { background: #f5f3ff; color: #6d28d9; }
+.hb-kecemasan { background: #ecfeff; color: #0e7490; }
+.hb-lain { background: var(--grey2); color: var(--mid); }
+
 /* Footer */
 .portal-footer {
   text-align: center;
@@ -560,8 +639,9 @@ input::placeholder, textarea::placeholder { color: #bbb; }
 
     <!-- Tabs -->
     <div class="tab-row">
-      <button class="tab-btn active" onclick="switchTab('maklumat', this)">📋 Maklumat Diri</button>
-      <button class="tab-btn" onclick="switchTab('syarikat', this)">🏢 Syarikat LI</button>
+      <button class="tab-btn active" onclick="switchTab('maklumat', this)">📋 Maklumat</button>
+      <button class="tab-btn" onclick="switchTab('syarikat', this)">🏢 Syarikat</button>
+      <button class="tab-btn" onclick="switchTab('hadir', this); loadHadir()">🗓️ Hadir</button>
     </div>
 
     <!-- TAB: Maklumat Diri -->
@@ -619,6 +699,57 @@ input::placeholder, textarea::placeholder { color: #bbb; }
       <div class="status" id="liStatus"></div>
     </div>
 
+    <!-- TAB: Kehadiran -->
+    <div class="tab-panel" id="tab-hadir">
+
+      <!-- Tandak hari ini -->
+      <div class="sect">Kehadiran Hari Ini</div>
+      <div id="hadirTodayBox">
+        <div style="text-align:center;padding:24px;color:var(--mid);font-size:13px;">Memuatkan...</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Rekap & Analisa -->
+      <div class="sect">Rekap Kehadiran Saya</div>
+
+      <!-- Stat ringkas -->
+      <div id="hadirStatBox" style="display:none;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+          <div style="background:var(--grey);border-radius:var(--radius);padding:12px;text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--blue);" id="statHadir">0</div>
+            <div style="font-size:10px;color:var(--mid);margin-top:2px;">Hadir</div>
+          </div>
+          <div style="background:var(--grey);border-radius:var(--radius);padding:12px;text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#e53535;" id="statTidak">0</div>
+            <div style="font-size:10px;color:var(--mid);margin-top:2px;">Tidak Hadir</div>
+          </div>
+          <div style="background:var(--grey);border-radius:var(--radius);padding:12px;text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#d97706;" id="statLuar">0</div>
+            <div style="font-size:10px;color:var(--mid);margin-top:2px;">Tugasan Luar</div>
+          </div>
+          <div style="background:var(--grey);border-radius:var(--radius);padding:12px;text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#7c3aed;" id="statSakit">0</div>
+            <div style="font-size:10px;color:var(--mid);margin-top:2px;">Cuti Sakit</div>
+          </div>
+          <div style="background:var(--grey);border-radius:var(--radius);padding:12px;text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#0891b2;" id="statKecemasan">0</div>
+            <div style="font-size:10px;color:var(--mid);margin-top:2px;">Cuti Kecemasan</div>
+          </div>
+          <div style="background:var(--grey);border-radius:var(--radius);padding:12px;text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--mid);" id="statJumlah">0</div>
+            <div style="font-size:10px;color:var(--mid);margin-top:2px;">Jumlah Hari</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Senarai rekod -->
+      <div id="hadirRekodBox">
+        <div style="text-align:center;padding:16px;color:var(--mid);font-size:12px;">—</div>
+      </div>
+
+    </div>
+
     <button class="btn btn-ghost" onclick="doLogout()">↩ Log Keluar</button>
   </div>
 
@@ -632,7 +763,7 @@ input::placeholder, textarea::placeholder { color: #bbb; }
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzxbsj_f48Lo4VVKB4fiGrNTITQNKsXNo5wxoe4cN31x0lXmmELsg_FXG-k--tsnKnzJg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbznXdyg9vJgFKkfW3zuOY9oyZsythRI75FlTbeeHVNGvmToKzwh0OH8vVxHs2EzYPJsKw/exec";
 
 let session = null, failCount = 0, locked = false;
 
@@ -755,6 +886,168 @@ function showStatus(id, type, msg) {
   el.className = 'status ' + type;
   el.textContent = msg;
   el.style.display = 'block';
+}
+
+// ━━━━ KEHADIRAN ━━━━
+let selectedStatus = '';
+let hadirLoaded = false;
+
+async function loadHadir() {
+  if (hadirLoaded) return; // elak reload bila tukar tab berulang
+  renderHadirToday();
+  loadRekap();
+}
+
+async function renderHadirToday() {
+  const box = document.getElementById('hadirTodayBox');
+  box.innerHTML = `<div style="text-align:center;padding:16px;color:var(--mid);font-size:12px;">Menyemak kehadiran hari ini...</div>`;
+
+  try {
+    const res  = await fetch(`${GAS_URL}?action=checkHadir&ndp=${encodeURIComponent(session.ndp)}`);
+    const json = await res.json();
+    const tarikh = json.tarikh || '—';
+
+    if (json.daftarHari) {
+      // Dah tandak — tunjuk status & bagi option edit
+      box.innerHTML = `
+        <div class="today-done">
+          <div class="today-done-icon">${statusIcon(json.status)}</div>
+          <div class="today-done-info">
+            <div class="today-done-status">${json.status}</div>
+            <div class="today-done-ts">${tarikh} &nbsp;·&nbsp; ${json.timestamp || ''}</div>
+            ${json.catatan ? `<div style="font-size:11px;color:var(--mid);margin-top:4px;">"${json.catatan}"</div>` : ''}
+          </div>
+          <span class="hadir-badge ${badgeClass(json.status)}">${json.status}</span>
+        </div>
+        <div style="font-size:11px;color:var(--mid);margin-bottom:10px;">Nak tukar? Boleh kemaskini lagi hari ini.</div>
+        ${renderHadirForm(json.status, tarikh)}`;
+      selectedStatus = json.status;
+    } else {
+      // Belum tandak
+      box.innerHTML = `
+        <div class="today-card">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:4px;">📅 ${tarikh}</div>
+          <div style="font-size:11px;color:var(--mid);">Belum tandakan kehadiran hari ini</div>
+        </div>
+        ${renderHadirForm('', tarikh)}`;
+      selectedStatus = '';
+    }
+  } catch(err) {
+    box.innerHTML = `<div style="color:var(--error);font-size:12px;padding:12px;">Gagal sambung ke pelayan.</div>`;
+  }
+}
+
+function renderHadirForm(currentStatus, tarikh) {
+  const statuses = [
+    { val: 'Hadir',           icon: '✅', cls: '' },
+    { val: 'Tidak Hadir',     icon: '❌', cls: 'sel-tidakhadir' },
+    { val: 'Tugasan Luar',    icon: '🚗', cls: 'sel-tugasan' },
+    { val: 'Cuti Sakit',      icon: '🤒', cls: 'sel-sakit' },
+    { val: 'Cuti Kecemasan',  icon: '🚨', cls: 'sel-kecemasan' },
+    { val: 'Lain-lain',       icon: '📝', cls: 'sel-lain' },
+  ];
+
+  const btns = statuses.map(s => `
+    <button class="hadir-btn ${s.cls} ${currentStatus===s.val?'selected':''}"
+      onclick="selectStatus('${s.val}', this)">
+      ${s.icon}<br>${s.val}
+    </button>`).join('');
+
+  return `
+    <div style="font-size:11px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Pilih Status</div>
+    <div class="hadir-grid">${btns}</div>
+    <div class="field" id="catatanField" style="${currentStatus==='Lain-lain'||currentStatus===''?'':'display:none'}">
+      <label>Catatan (Wajib untuk Lain-lain)</label>
+      <input type="text" id="inputCatatan" placeholder="Nyatakan sebab..." />
+    </div>
+    <button class="btn" onclick="submitHadir()" id="submitHadirBtn">Hantar Kehadiran</button>
+    <div class="status" id="hadirStatus"></div>`;
+}
+
+function selectStatus(val, btn) {
+  selectedStatus = val;
+  document.querySelectorAll('.hadir-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const cf = document.getElementById('catatanField');
+  if (cf) cf.style.display = val === 'Lain-lain' ? 'block' : 'none';
+}
+
+async function submitHadir() {
+  if (!selectedStatus) { showStatus('hadirStatus','error','Sila pilih status kehadiran.'); return; }
+  const catatan = (document.getElementById('inputCatatan')?.value || '').trim();
+  if (selectedStatus === 'Lain-lain' && !catatan) { showStatus('hadirStatus','error','Sila isi catatan untuk Lain-lain.'); return; }
+
+  showStatus('hadirStatus','loading','Merekodkan kehadiran...');
+  document.getElementById('submitHadirBtn').disabled = true;
+
+  try {
+    const payload = { action:'submitHadir', ndp:session.ndp, ic:session.ic, status:selectedStatus, catatan };
+    const json = await (await fetch(GAS_URL, {method:'POST', body:JSON.stringify(payload)})).json();
+    if (json.success) {
+      showStatus('hadirStatus','success','✓ ' + json.message);
+      hadirLoaded = false;
+      setTimeout(() => { renderHadirToday(); loadRekap(); }, 800);
+    } else {
+      showStatus('hadirStatus','error', json.message || 'Gagal merekod.');
+      document.getElementById('submitHadirBtn').disabled = false;
+    }
+  } catch(err) {
+    showStatus('hadirStatus','error','Gagal sambung ke pelayan.');
+    document.getElementById('submitHadirBtn').disabled = false;
+  }
+}
+
+async function loadRekap() {
+  const rekodBox = document.getElementById('hadirRekodBox');
+  rekodBox.innerHTML = `<div style="text-align:center;padding:12px;color:var(--mid);font-size:12px;">Memuatkan rekap...</div>`;
+
+  try {
+    const res  = await fetch(`${GAS_URL}?action=getRekapHadir&ndp=${encodeURIComponent(session.ndp)}&ic=${encodeURIComponent(session.ic)}`);
+    const json = await res.json();
+    if (!json.success) { rekodBox.innerHTML = `<div style="color:var(--error);font-size:12px;">${json.message}</div>`; return; }
+
+    // Stat
+    const st = json.stat;
+    document.getElementById('statHadir').textContent    = st.hadir;
+    document.getElementById('statTidak').textContent    = st.tidakHadir;
+    document.getElementById('statLuar').textContent     = st.tugasanLuar;
+    document.getElementById('statSakit').textContent    = st.cutiSakit;
+    document.getElementById('statKecemasan').textContent = st.cutiKecemasan;
+    document.getElementById('statJumlah').textContent   = st.jumlah;
+    document.getElementById('hadirStatBox').style.display = 'block';
+    hadirLoaded = true;
+
+    // Senarai rekod
+    if (json.rekod.length === 0) {
+      rekodBox.innerHTML = `<div style="text-align:center;padding:20px;color:#bbb;font-size:12px;font-style:italic;">Tiada rekod kehadiran lagi.</div>`;
+      return;
+    }
+
+    rekodBox.innerHTML = json.rekod.map(r => `
+      <div class="rekod-item">
+        <div>
+          <div class="rekod-tarikh">📅 ${r.tarikh}</div>
+          ${r.catatan ? `<div class="rekod-catatan">"${r.catatan}"</div>` : ''}
+        </div>
+        <span class="hadir-badge ${badgeClass(r.status)}">${r.status}</span>
+      </div>`).join('');
+  } catch(err) {
+    rekodBox.innerHTML = `<div style="color:var(--error);font-size:12px;padding:12px;">Gagal muatkan rekap.</div>`;
+  }
+}
+
+function statusIcon(s) {
+  const m = { 'Hadir':'✅','Tidak Hadir':'❌','Tugasan Luar':'🚗','Cuti Sakit':'🤒','Cuti Kecemasan':'🚨','Lain-lain':'📝' };
+  return m[s] || '📋';
+}
+
+function badgeClass(s) {
+  if (s === 'Hadir') return 'hb-hadir';
+  if (s === 'Tidak Hadir') return 'hb-tidak';
+  if (s === 'Tugasan Luar') return 'hb-tugasan';
+  if (s === 'Cuti Sakit') return 'hb-sakit';
+  if (s === 'Cuti Kecemasan') return 'hb-kecemasan';
+  return 'hb-lain';
 }
 </script>
 </body>
