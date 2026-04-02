@@ -511,6 +511,9 @@ tr:hover td { background: var(--grey3); }
       <button class="nav-item" onclick="showPanel('syarikat', this)">
         <span class="nav-icon">🏢</span> Syarikat LI
       </button>
+      <button class="nav-item" onclick="showPanel('kehadiran', this); loadAdminHadir()">
+        <span class="nav-icon">🗓️</span> Laporan Kehadiran
+      </button>
     </div>
     <div class="sidebar-section" style="margin-top:8px;">
       <div class="sidebar-label">Export</div>
@@ -641,6 +644,46 @@ tr:hover td { background: var(--grey3); }
       <div class="syarikat-grid" id="syarikatGrid"></div>
     </div>
 
+    <!-- ── LAPORAN KEHADIRAN ── -->
+    <div class="panel" id="panel-kehadiran">
+      <div class="page-hdr">
+        <h1>Laporan Kehadiran</h1>
+        <p>Rekod kehadiran harian semua pelajar LI</p>
+      </div>
+
+      <!-- Stat hari ini -->
+      <div class="stat-grid" id="hadirStatGrid" style="margin-bottom:20px;"></div>
+
+      <!-- Toolbar -->
+      <div class="tbl-toolbar">
+        <input class="tbl-search" type="text" id="searchHadir" placeholder="🔍  Cari nama, NDP..." oninput="filterHadir()" />
+        <input type="date" class="tbl-filter" id="filterTarikh" onchange="filterHadir()" />
+        <select class="tbl-filter" id="filterHadirStatus" onchange="filterHadir()">
+          <option value="">Semua Status</option>
+          <option value="Hadir">Hadir</option>
+          <option value="Tidak Hadir">Tidak Hadir</option>
+          <option value="Tugasan Luar">Tugasan Luar</option>
+          <option value="Cuti Sakit">Cuti Sakit</option>
+          <option value="Cuti Kecemasan">Cuti Kecemasan</option>
+          <option value="Lain-lain">Lain-lain</option>
+        </select>
+        <button class="btn-action yellow" onclick="exportHadirExcel()">📥 Excel</button>
+        <button class="btn-action outline" onclick="printHadirReport()">🖨️ Cetak</button>
+      </div>
+
+      <div class="tbl-wrap">
+        <div class="tbl-count" id="hadirCount">—</div>
+        <div class="tbl-scroll">
+          <table>
+            <thead><tr>
+              <th>Tarikh</th><th>NDP</th><th>Nama</th><th>Kursus</th><th>Status</th><th>Catatan</th><th>Masa Rekod</th>
+            </tr></thead>
+            <tbody id="tbodyHadir"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /adm-main -->
 </div><!-- /adminApp -->
 
@@ -659,7 +702,7 @@ tr:hover td { background: var(--grey3); }
 <div id="printReport"></div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzxbsj_f48Lo4VVKB4fiGrNTITQNKsXNo5wxoe4cN31x0lXmmELsg_FXG-k--tsnKnzJg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbznXdyg9vJgFKkfW3zuOY9oyZsythRI75FlTbeeHVNGvmToKzwh0OH8vVxHs2EzYPJsKw/exec";
 const ADMIN_PIN = "000777";
 
 let allStudents = [];
@@ -1067,6 +1110,157 @@ function showLoading(msg) {
   document.getElementById('loadingOverlay').classList.add('show');
 }
 function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+
+// ━━━━ KEHADIRAN ADMIN ━━━━
+let allHadir = [];
+let hadirAdminLoaded = false;
+
+async function loadAdminHadir() {
+  if (hadirAdminLoaded) return;
+  showLoading('Memuatkan data kehadiran...');
+  try {
+    const res  = await fetch(`${GAS_URL}?action=getAllHadir&pin=${adminPin}`);
+    const json = await res.json();
+    if (json.success) {
+      allHadir = json.rekod;
+      hadirAdminLoaded = true;
+      renderHadirStat();
+      renderHadirTable(allHadir);
+      // Set default date filter ke hari ini
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('filterTarikh').value = today;
+      filterHadir();
+    }
+  } catch(err) { alert('Gagal muatkan data kehadiran.'); }
+  hideLoading();
+}
+
+function renderHadirStat() {
+  const total   = allHadir.length;
+  const hadir   = allHadir.filter(r => r.status === 'Hadir').length;
+  const tidak   = allHadir.filter(r => r.status === 'Tidak Hadir').length;
+  const luar    = allHadir.filter(r => r.status === 'Tugasan Luar').length;
+  const sakit   = allHadir.filter(r => r.status === 'Cuti Sakit').length;
+  const kecemas = allHadir.filter(r => r.status === 'Cuti Kecemasan').length;
+
+  // Unik pelajar yang dah rekod hari ini
+  const todayStr = formatDateMY(new Date());
+  const hadirHariIni = new Set(allHadir.filter(r => r.tarikh === todayStr).map(r => r.ndp)).size;
+
+  document.getElementById('hadirStatGrid').innerHTML = `
+    <div class="stat-card blue"><div class="stat-icon">📋</div><div class="stat-num">${total}</div><div class="stat-label">Jumlah Rekod</div></div>
+    <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-num">${hadir}</div><div class="stat-label">Hadir (Keseluruhan)</div></div>
+    <div class="stat-card red"><div class="stat-icon">❌</div><div class="stat-num">${tidak}</div><div class="stat-label">Tidak Hadir</div></div>
+    <div class="stat-card yellow"><div class="stat-icon">📅</div><div class="stat-num">${hadirHariIni}</div><div class="stat-label">Tandak Hari Ini</div></div>`;
+}
+
+function filterHadir() {
+  const q   = document.getElementById('searchHadir').value.toLowerCase();
+  const tgl = document.getElementById('filterTarikh').value; // yyyy-mm-dd
+  const st  = document.getElementById('filterHadirStatus').value;
+
+  let list = allHadir.filter(r => {
+    const matchQ  = !q  || r.nama.toLowerCase().includes(q) || r.ndp.includes(q);
+    const matchSt = !st || r.status === st;
+    let matchTgl  = true;
+    if (tgl) {
+      // convert filter date yyyy-mm-dd to dd/MM/yyyy untuk compare
+      const parts = tgl.split('-');
+      const tglMY = `${parts[2]}/${parts[1]}/${parts[0]}`;
+      matchTgl = r.tarikh === tglMY;
+    }
+    return matchQ && matchSt && matchTgl;
+  });
+  renderHadirTable(list);
+}
+
+function renderHadirTable(list) {
+  document.getElementById('hadirCount').textContent = `${list.length} rekod`;
+  const tbody = document.getElementById('tbodyHadir');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#bbb;padding:32px;font-style:italic;">Tiada rekod ditemui</td></tr>`;
+    return;
+  }
+  const statusColor = { 'Hadir':'#dcfce7|#15803d', 'Tidak Hadir':'#fee2e2|#b91c1c', 'Tugasan Luar':'#fef9c3|#92400e', 'Cuti Sakit':'#f5f3ff|#6d28d9', 'Cuti Kecemasan':'#ecfeff|#0e7490', 'Lain-lain':'#f4f4f4|#6b6b6b' };
+  tbody.innerHTML = list.map(r => {
+    const [bg, col] = (statusColor[r.status] || '#f4f4f4|#6b6b6b').split('|');
+    return `<tr>
+      <td class="td-mono">${r.tarikh}</td>
+      <td class="td-mono">${r.ndp}</td>
+      <td class="td-name">${r.nama}</td>
+      <td class="td-kursus">${r.kodKursus||'—'}</td>
+      <td><span style="display:inline-block;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:600;background:${bg};color:${col}">${r.status}</span></td>
+      <td style="font-size:11px;color:var(--mid);">${r.catatan||'—'}</td>
+      <td style="font-size:10px;color:var(--mid);">${r.timestamp||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportHadirExcel() {
+  if (!allHadir.length) { alert('Tiada data untuk dieksport.'); return; }
+  showLoading('Menjana Excel kehadiran...');
+
+  const wsData = [['TARIKH','NDP','NAMA','KOD KURSUS','STATUS','CATATAN','TIMESTAMP']];
+  allHadir.forEach(r => wsData.push([r.tarikh, r.ndp, r.nama, r.kodKursus, r.status, r.catatan, r.timestamp]));
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [12,12,35,25,16,30,22].map(w => ({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Kehadiran');
+
+  const now = new Date();
+  XLSX.writeFile(wb, `Kehadiran_ADTEC_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xlsx`);
+  hideLoading();
+}
+
+function printHadirReport() {
+  const filtered = (() => {
+    const q   = document.getElementById('searchHadir').value.toLowerCase();
+    const tgl = document.getElementById('filterTarikh').value;
+    const st  = document.getElementById('filterHadirStatus').value;
+    return allHadir.filter(r => {
+      const matchQ  = !q  || r.nama.toLowerCase().includes(q) || r.ndp.includes(q);
+      const matchSt = !st || r.status === st;
+      let matchTgl  = true;
+      if (tgl) { const p = tgl.split('-'); matchTgl = r.tarikh === `${p[2]}/${p[1]}/${p[0]}`; }
+      return matchQ && matchSt && matchTgl;
+    });
+  })();
+
+  const now = new Date();
+  const tarikh = now.toLocaleDateString('ms-MY',{day:'2-digit',month:'long',year:'numeric'});
+  const filterTgl = document.getElementById('filterTarikh').value;
+  const tajuk = filterTgl ? `Kehadiran: ${filterTgl.split('-').reverse().join('/')}` : 'Laporan Kehadiran Keseluruhan';
+
+  const statusColor = { 'Hadir':'#dcfce7|#15803d','Tidak Hadir':'#fee2e2|#b91c1c','Tugasan Luar':'#fef9c3|#92400e','Cuti Sakit':'#f5f3ff|#6d28d9','Cuti Kecemasan':'#ecfeff|#0e7490','Lain-lain':'#f4f4f4|#6b6b6b' };
+  const rows = filtered.map(r => {
+    const [bg,col] = (statusColor[r.status]||'#f4f4f4|#6b6b6b').split('|');
+    return `<tr><td>${r.tarikh}</td><td>${r.ndp}</td><td style="font-weight:500">${r.nama}</td><td style="font-size:8pt">${r.kodKursus||'—'}</td><td><span style="display:inline-block;padding:2px 8px;border-radius:100px;font-size:8pt;font-weight:600;background:${bg};color:${col}">${r.status}</span></td><td style="font-size:8pt">${r.catatan||'—'}</td></tr>`;
+  }).join('');
+
+  const win = window.open('','_blank','width=1000,height=700');
+  win.document.write(`<html><head><meta charset="UTF-8"><title>${tajuk}</title>
+    <style>@page{margin:15mm;size:A4 landscape}body{font-family:Arial;font-size:10pt;color:#000}
+    .hdr{border-bottom:3px solid #1354f9;padding-bottom:12px;margin-bottom:16px}
+    h1{font-size:14pt;color:#1354f9;margin-bottom:2px}.sub{font-size:9pt;color:#666}
+    table{width:100%;border-collapse:collapse;font-size:9pt}
+    th{background:#1354f9;color:#fff;padding:7px 10px;text-align:left;font-size:8pt;text-transform:uppercase}
+    td{padding:7px 10px;border-bottom:1px solid #eee}
+    tr:nth-child(even) td{background:#f9f9f9}
+    .footer{margin-top:16px;border-top:1px solid #ddd;padding-top:8px;display:flex;justify-content:space-between;font-size:8pt;color:#999}
+    </style></head><body>
+    <div class="hdr"><h1>${tajuk} — ADTEC Kuantan</h1><p class="sub">Jabatan Tenaga Manusia Malaysia &nbsp;|&nbsp; Tarikh Cetak: ${tarikh} &nbsp;|&nbsp; ${filtered.length} rekod</p></div>
+    <table><thead><tr><th>Tarikh</th><th>NDP</th><th>Nama</th><th>Kursus</th><th>Status</th><th>Catatan</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <div class="footer"><span>Portal LI — ADTEC Kuantan © 2026</span><span>Dijana secara automatik</span></div>
+    </body></html>`);
+  win.document.close(); win.focus();
+  setTimeout(() => win.print(), 500);
+}
+
+function formatDateMY(d) {
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
 </script>
 </body>
 </html>
