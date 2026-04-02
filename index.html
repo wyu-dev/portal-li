@@ -622,11 +622,17 @@ input::placeholder, textarea::placeholder { color: #bbb; }
     <button class="btn btn-ghost" onclick="doLogout()">↩ Log Keluar</button>
   </div>
 
-  <div class="portal-footer">ADTEC Kuantan © 2026 &nbsp;·&nbsp; Portal Latihan Industri</div>
+  <div class="portal-footer">
+    ADTEC Kuantan © 2026 &nbsp;·&nbsp; Portal Latihan Industri
+    <br>
+    <a href="admin.html" title="Panel Pentadbir" style="display:inline-flex;align-items:center;gap:5px;margin-top:10px;font-size:11px;color:#bbb;text-decoration:none;opacity:0.4;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'">
+      👔 Panel Pentadbir
+    </a>
+  </div>
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxVY1D49RFLAn84egYmHUk6ZuAAjXiQPsSSpqwBrwZLxk6l-z0nr1fP6EgVhj93K4u36A/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzxbsj_f48Lo4VVKB4fiGrNTITQNKsXNo5wxoe4cN31x0lXmmELsg_FXG-k--tsnKnzJg/exec";
 
 let session = null, failCount = 0, locked = false;
 
