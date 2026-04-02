@@ -626,7 +626,7 @@ input::placeholder, textarea::placeholder { color: #bbb; }
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwnAHimGWfnW_2ixzR_iTDGjtGhcrFKcxi9ZhHLAqvKq8gVSFPjwPm3K7TmqSjD1s_gXg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxVY1D49RFLAn84egYmHUk6ZuAAjXiQPsSSpqwBrwZLxk6l-z0nr1fP6EgVhj93K4u36A/exec";
 
 let session = null, failCount = 0, locked = false;
 
@@ -670,7 +670,7 @@ function renderDashboard() {
   document.getElementById('infoIc').textContent     = s.ic.substring(0,6) + '••••••';
   document.getElementById('infoKursus').textContent = s.kodKursus || '—';
   document.getElementById('infoTel').textContent    = s.noTel || '—';
-  if (s.noTel) document.getElementById('inputTel').value = s.noTel;
+  document.getElementById('inputTel').value         = s.noTel || '';
   setInfoVal('curNamaSyarikat', s.namaSyarikat);
   setInfoVal('curNoTelSyarikat', s.noTelSyarikat);
   setInfoVal('curNamaPenyelia', s.namaPenyelia);
