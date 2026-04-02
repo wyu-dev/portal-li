@@ -571,6 +571,7 @@ input::placeholder, textarea::placeholder { color: #bbb; }
         <div class="info-row"><span class="info-key">Nama Penuh</span><span class="info-val" id="infoNama">—</span></div>
         <div class="info-row"><span class="info-key">NDP</span><span class="info-val" id="infoNdp">—</span></div>
         <div class="info-row"><span class="info-key">No. K/P</span><span class="info-val" id="infoIc">—</span></div>
+        <div class="info-row"><span class="info-key">Kod / Nama Kursus</span><span class="info-val" id="infoKursus">—</span></div>
         <div class="info-row"><span class="info-key">No. Telefon</span><span class="info-val" id="infoTel">—</span></div>
       </div>
 
@@ -625,7 +626,7 @@ input::placeholder, textarea::placeholder { color: #bbb; }
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbz60oxzbXP_6dKSaOwt2DYD1Z8wvc_UgA8VsIUOeC-iQ0iCztF9CsXu9_B7-9xfEJKdkw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwnAHimGWfnW_2ixzR_iTDGjtGhcrFKcxi9ZhHLAqvKq8gVSFPjwPm3K7TmqSjD1s_gXg/exec";
 
 let session = null, failCount = 0, locked = false;
 
@@ -666,8 +667,9 @@ function renderDashboard() {
   document.getElementById('dashNdp').textContent  = 'NDP: ' + s.ndp;
   document.getElementById('infoNama').textContent = s.nama;
   document.getElementById('infoNdp').textContent  = s.ndp;
-  document.getElementById('infoIc').textContent   = s.ic.substring(0,6) + '••••••';
-  document.getElementById('infoTel').textContent  = s.noTel || '—';
+  document.getElementById('infoIc').textContent     = s.ic.substring(0,6) + '••••••';
+  document.getElementById('infoKursus').textContent = s.kodKursus || '—';
+  document.getElementById('infoTel').textContent    = s.noTel || '—';
   if (s.noTel) document.getElementById('inputTel').value = s.noTel;
   setInfoVal('curNamaSyarikat', s.namaSyarikat);
   setInfoVal('curNoTelSyarikat', s.noTelSyarikat);
