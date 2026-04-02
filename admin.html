@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Pentadbir — Portal LI ADTEC Kuantan</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<!-- SheetJS for Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --black:   #0d0d0d;
+  --white:   #ffffff;
+  --blue:    #1354f9;
+  --blue-dk: #0a3dc7;
+  --blue-lt: #e8effe;
+  --yellow:  #f5c400;
+  --grey:    #f4f4f4;
+  --grey2:   #e4e4e4;
+  --grey3:   #f9f9f9;
+  --mid:     #6b6b6b;
+  --error:   #e53535;
+  --success: #0e7c3a;
+  --warn:    #d97706;
+  --radius:  6px;
+  --sidebar: 230px;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body { background: var(--grey); color: var(--black); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+/* ── LOGIN SCREEN ── */
+#loginScreen {
+  min-height: 100vh;
+  background: var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+#loginScreen::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+#loginScreen::after {
+  content: '';
+  position: absolute;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(19,84,249,0.2) 0%, transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+.login-box {
+  position: relative;
+  z-index: 1;
+  width: 360px;
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 40px 36px;
+  text-align: center;
+  animation: fadeUp 0.5s ease;
+}
+.login-icon {
+  font-size: 44px;
+  margin-bottom: 16px;
+  display: block;
+}
+.login-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+.login-sub {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 28px;
+}
+.pin-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.pin-input {
+  width: 44px; height: 52px;
+  background: #222;
+  border: 1.5px solid #333;
+  border-radius: 6px;
+  color: var(--white);
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+  caret-color: var(--blue);
+}
+.pin-input:focus { border-color: var(--blue); }
+.btn-login-admin {
+  width: 100%;
+  background: var(--blue);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-login-admin:hover { background: var(--blue-dk); }
+.btn-login-admin:disabled { opacity: 0.5; cursor: not-allowed; }
+.login-err { color: var(--error); font-size: 12px; margin-top: 12px; display: none; }
+.login-back { display: block; margin-top: 16px; font-size: 12px; color: #555; text-decoration: none; }
+.login-back:hover { color: #888; }
+
+/* ── ADMIN LAYOUT ── */
+#adminApp { display: none; min-height: 100vh; }
+
+/* Topbar */
+.adm-topbar {
+  background: var(--black);
+  height: 54px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 14px;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+}
+.adm-topbar img { height: 28px; filter: brightness(0) invert(1); }
+.adm-topbar-div { width: 1px; height: 18px; background: #2a2a2a; }
+.adm-topbar-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.8); }
+.adm-topbar-badge { background: var(--yellow); color: var(--black); font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; padding: 3px 9px; border-radius: 2px; text-transform: uppercase; }
+.adm-topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.adm-user { font-size: 11px; color: #555; }
+.btn-logout-adm { background: transparent; border: 1px solid #2a2a2a; color: #666; font-size: 11px; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+.btn-logout-adm:hover { border-color: #444; color: #aaa; }
+
+/* Sidebar */
+.adm-sidebar {
+  position: fixed;
+  top: 54px; left: 0; bottom: 0;
+  width: var(--sidebar);
+  background: var(--white);
+  border-right: 1px solid var(--grey2);
+  padding: 20px 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+.sidebar-section { padding: 0 16px; margin-bottom: 6px; }
+.sidebar-label { font-size: 9px; font-weight: 700; color: #bbb; letter-spacing: 2px; text-transform: uppercase; padding: 8px 8px 4px; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mid);
+  transition: all 0.15s;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.nav-item:hover { background: var(--grey); color: var(--black); }
+.nav-item.active { background: var(--blue-lt); color: var(--blue); font-weight: 600; }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+/* Main content */
+.adm-main {
+  margin-left: var(--sidebar);
+  margin-top: 54px;
+  padding: 28px 28px 60px;
+  min-height: calc(100vh - 54px);
+}
+
+/* Page header */
+.page-hdr { margin-bottom: 24px; }
+.page-hdr h1 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--black); }
+.page-hdr p { font-size: 13px; color: var(--mid); margin-top: 3px; }
+
+/* Panels */
+.panel { display: none; }
+.panel.active { display: block; animation: fadeIn 0.25s ease; }
+
+/* ── STAT CARDS ── */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--white);
+  border: 1px solid var(--grey2);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.stat-card.blue::before { background: var(--blue); }
+.stat-card.yellow::before { background: var(--yellow); }
+.stat-card.green::before { background: #16a34a; }
+.stat-card.red::before { background: var(--error); }
+.stat-num { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: var(--black); line-height: 1; }
+.stat-label { font-size: 11px; color: var(--mid); margin-top: 6px; font-weight: 500; }
+.stat-icon { position: absolute; right: 16px; top: 16px; font-size: 22px; opacity: 0.15; }
+
+/* Progress bar */
+.prog-wrap { margin-bottom: 24px; }
+.prog-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--mid); margin-bottom: 6px; }
+.prog-bar { height: 8px; background: var(--grey2); border-radius: 100px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 100px; background: var(--blue); transition: width 0.6s ease; }
+.prog-fill.yellow { background: var(--yellow); }
+
+/* ── TABLE ── */
+.tbl-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.tbl-search {
+  flex: 1;
+  min-width: 200px;
+  background: var(--white);
+  border: 1.5px solid var(--grey2);
+  border-radius: var(--radius);
+  padding: 9px 14px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  color: var(--black);
+}
+.tbl-search:focus { border-color: var(--blue); }
+.tbl-filter {
+  background: var(--white);
+  border: 1.5px solid var(--grey2);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  color: var(--black);
+  cursor: pointer;
+}
+.tbl-filter:focus { border-color: var(--blue); }
+.btn-action {
+  background: var(--blue);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-action:hover { background: var(--blue-dk); }
+.btn-action.yellow { background: var(--yellow); color: var(--black); }
+.btn-action.yellow:hover { background: var(--yellow-dk, #d4a900); }
+.btn-action.outline { background: transparent; border: 1.5px solid var(--grey2); color: var(--mid); }
+.btn-action.outline:hover { border-color: var(--black); color: var(--black); }
+
+.tbl-wrap {
+  background: var(--white);
+  border: 1px solid var(--grey2);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.tbl-count { font-size: 11px; color: var(--mid); padding: 10px 16px; border-bottom: 1px solid var(--grey2); }
+.tbl-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead tr { background: var(--grey); }
+th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--mid);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--grey2);
+}
+td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--grey);
+  vertical-align: middle;
+  color: var(--black);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--grey3); }
+.td-name { font-weight: 500; max-width: 220px; }
+.td-mono { font-size: 12px; color: var(--mid); font-family: monospace; }
+.td-kursus { font-size: 11px; max-width: 160px; }
+
+/* Status badges */
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+.badge.ok  { background: #dcfce7; color: #15803d; }
+.badge.nope { background: #fee2e2; color: #b91c1c; }
+.badge.partial { background: #fef9c3; color: #92400e; }
+
+/* Details btn */
+.btn-detail {
+  background: transparent;
+  border: 1px solid var(--grey2);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--mid);
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.btn-detail:hover { border-color: var(--blue); color: var(--blue); }
+
+/* Syarikat cards */
+.syarikat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.syarikat-card {
+  background: var(--white);
+  border: 1px solid var(--grey2);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.syarikat-name { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.syarikat-count {
+  display: inline-block;
+  background: var(--blue-lt);
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 100px;
+  margin-bottom: 8px;
+}
+.syarikat-addr { font-size: 11px; color: var(--mid); line-height: 1.6; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--white);
+  border-radius: 10px;
+  width: 520px;
+  max-width: calc(100vw - 32px);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: fadeUp 0.25s ease;
+}
+.modal-head {
+  background: var(--black);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 10px 10px 0 0;
+  position: sticky;
+  top: 0;
+}
+.modal-head-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--white); }
+.modal-close { background: transparent; border: none; color: #666; font-size: 20px; cursor: pointer; line-height: 1; }
+.modal-close:hover { color: var(--white); }
+.modal-body { padding: 24px; }
+.modal-section { margin-bottom: 20px; }
+.modal-section-title {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--blue-lt);
+}
+.modal-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 9px 12px; background: var(--grey3); border-radius: 4px; margin-bottom: 2px; }
+.modal-key { font-size: 10px; font-weight: 600; color: var(--mid); text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
+.modal-val { font-size: 13px; font-weight: 500; color: var(--black); text-align: right; word-break: break-word; max-width: 65%; }
+.modal-val.empty { color: #ccc; font-style: italic; font-weight: 400; }
+
+/* Print report */
+@media print {
+  #loginScreen, #adminApp .adm-topbar, #adminApp .adm-sidebar,
+  .tbl-toolbar, .btn-action, .btn-detail,
+  .modal-overlay { display: none !important; }
+  .adm-main { margin: 0 !important; padding: 0 !important; }
+  #printReport { display: block !important; }
+}
+#printReport { display: none; }
+
+/* Loading */
+.loading-overlay {
+  position: fixed; inset: 0;
+  background: rgba(255,255,255,0.85);
+  z-index: 999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+}
+.loading-overlay.show { display: flex; }
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--grey2);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.loading-text { font-size: 13px; color: var(--mid); }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 48px 24px; color: var(--mid); }
+.empty-state-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state p { font-size: 13px; }
+
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Memuatkan data...</div>
+</div>
+
+<!-- ═══════════ LOGIN ═══════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <span class="login-icon">👔</span>
+    <div class="login-title">Panel Pentadbir</div>
+    <div class="login-sub">Portal Latihan Industri — ADTEC Kuantan</div>
+    <div class="pin-row">
+      <input class="pin-input" type="password" maxlength="1" inputmode="numeric" id="p0" />
+      <input class="pin-input" type="password" maxlength="1" inputmode="numeric" id="p1" />
+      <input class="pin-input" type="password" maxlength="1" inputmode="numeric" id="p2" />
+      <input class="pin-input" type="password" maxlength="1" inputmode="numeric" id="p3" />
+      <input class="pin-input" type="password" maxlength="1" inputmode="numeric" id="p4" />
+      <input class="pin-input" type="password" maxlength="1" inputmode="numeric" id="p5" />
+    </div>
+    <button class="btn-login-admin" id="loginAdminBtn" onclick="doAdminLogin()">Masuk</button>
+    <div class="login-err" id="loginErr">PIN tidak sah. Cuba semula.</div>
+    <a class="login-back" href="index.html">← Kembali ke Portal Pelajar</a>
+  </div>
+</div>
+
+<!-- ═══════════ ADMIN APP ═══════════ -->
+<div id="adminApp">
+
+  <!-- Topbar -->
+  <div class="adm-topbar">
+    <img src="https://wyu-dev.github.io/logo/logo-adtec.png" alt="ADTEC" onerror="this.style.display='none'">
+    <div class="adm-topbar-div"></div>
+    <div class="adm-topbar-title">Panel Pentadbir</div>
+    <div class="adm-topbar-badge">Admin</div>
+    <div class="adm-topbar-right">
+      <span class="adm-user">👔 Pentadbir</span>
+      <button class="btn-logout-adm" onclick="doAdminLogout()">Log Keluar</button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="adm-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Menu</div>
+      <button class="nav-item active" onclick="showPanel('dashboard', this)">
+        <span class="nav-icon">📊</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="showPanel('pelajar', this)">
+        <span class="nav-icon">👥</span> Senarai Pelajar
+      </button>
+      <button class="nav-item" onclick="showPanel('syarikat', this)">
+        <span class="nav-icon">🏢</span> Syarikat LI
+      </button>
+    </div>
+    <div class="sidebar-section" style="margin-top:8px;">
+      <div class="sidebar-label">Export</div>
+      <button class="nav-item" onclick="exportExcel()">
+        <span class="nav-icon">📥</span> Download Excel
+      </button>
+      <button class="nav-item" onclick="printReport()">
+        <span class="nav-icon">🖨️</span> Cetak Laporan
+      </button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="adm-main">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="page-hdr">
+        <h1>Dashboard</h1>
+        <p>Ringkasan status maklumat pelajar Latihan Industri</p>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon">👥</div>
+          <div class="stat-num" id="statTotal">—</div>
+          <div class="stat-label">Jumlah Pelajar</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">🏢</div>
+          <div class="stat-num" id="statLengkap">—</div>
+          <div class="stat-label">Maklumat LI Lengkap</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-num" id="statTidakLengkap">—</div>
+          <div class="stat-label">Belum Isi Syarikat</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-icon">🏭</div>
+          <div class="stat-num" id="statSyarikat">—</div>
+          <div class="stat-label">Jumlah Syarikat</div>
+        </div>
+      </div>
+
+      <div class="prog-wrap">
+        <div class="prog-label">
+          <span>Kelengkapan Maklumat Syarikat LI</span>
+          <span id="progPct">—</span>
+        </div>
+        <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      </div>
+
+      <div class="prog-wrap">
+        <div class="prog-label">
+          <span>Pelajar Yang Dah Isi No. Telefon</span>
+          <span id="progTelPct">—</span>
+        </div>
+        <div class="prog-bar"><div class="prog-fill yellow" id="progTelFill" style="width:0%"></div></div>
+      </div>
+
+      <!-- Belum isi -->
+      <div style="margin-top:20px;">
+        <div style="font-family:'Syne',sans-serif; font-size:13px; font-weight:700; margin-bottom:12px; color:var(--black);">
+          ⚠️ Pelajar Belum Isi Maklumat Syarikat
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table id="tblBelumIsi">
+              <thead><tr>
+                <th>Bil</th><th>Nama</th><th>NDP</th><th>Kursus</th><th>No. Tel</th>
+              </tr></thead>
+              <tbody id="tbodyBelumIsi"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SENARAI PELAJAR ── -->
+    <div class="panel" id="panel-pelajar">
+      <div class="page-hdr">
+        <h1>Senarai Pelajar</h1>
+        <p>Semua pelajar LI dan status maklumat mereka</p>
+      </div>
+      <div class="tbl-toolbar">
+        <input class="tbl-search" type="text" id="searchPelajar" placeholder="🔍  Cari nama, NDP, syarikat..." oninput="filterPelajar()" />
+        <select class="tbl-filter" id="filterStatus" onchange="filterPelajar()">
+          <option value="">Semua Status</option>
+          <option value="lengkap">Lengkap</option>
+          <option value="partial">Sebahagian</option>
+          <option value="kosong">Belum Isi</option>
+        </select>
+        <select class="tbl-filter" id="filterKursus" onchange="filterPelajar()">
+          <option value="">Semua Kursus</option>
+        </select>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-count" id="tblPelajarCount">—</div>
+        <div class="tbl-scroll">
+          <table id="tblPelajar">
+            <thead><tr>
+              <th>Bil</th>
+              <th>Nama</th>
+              <th>NDP</th>
+              <th>Kursus</th>
+              <th>No. Tel</th>
+              <th>Syarikat LI</th>
+              <th>Status</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="tbodyPelajar"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SYARIKAT LI ── -->
+    <div class="panel" id="panel-syarikat">
+      <div class="page-hdr">
+        <h1>Syarikat LI</h1>
+        <p>Senarai syarikat latihan industri dan bilangan pelajar</p>
+      </div>
+      <div class="tbl-toolbar">
+        <input class="tbl-search" type="text" id="searchSyarikat" placeholder="🔍  Cari nama syarikat..." oninput="filterSyarikat()" />
+        <span style="font-size:12px; color:var(--mid); margin-left:4px;" id="syarikatCount"></span>
+      </div>
+      <div class="syarikat-grid" id="syarikatGrid"></div>
+    </div>
+
+  </div><!-- /adm-main -->
+</div><!-- /adminApp -->
+
+<!-- ── STUDENT DETAIL MODAL ── -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <div class="modal-head-title" id="modalTitle">Detail Pelajar</div>
+      <button class="modal-close" onclick="closeModalBtn()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- PRINT REPORT (hidden, shown on print) -->
+<div id="printReport"></div>
+
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzxbsj_f48Lo4VVKB4fiGrNTITQNKsXNo5wxoe4cN31x0lXmmELsg_FXG-k--tsnKnzJg/exec";
+const ADMIN_PIN = "000777";
+
+let allStudents = [];
+let filteredStudents = [];
+let adminPin = "";
+
+// ━━━━ PIN INPUT LOGIC ━━━━
+document.querySelectorAll('.pin-input').forEach((inp, idx, arr) => {
+  inp.addEventListener('input', () => {
+    inp.value = inp.value.replace(/\D/g, '').slice(-1);
+    if (inp.value && idx < arr.length - 1) arr[idx + 1].focus();
+    if (idx === arr.length - 1 && inp.value) doAdminLogin();
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !inp.value && idx > 0) arr[idx - 1].focus();
+    if (e.key === 'Enter') doAdminLogin();
+  });
+});
+document.getElementById('p0').focus();
+
+// ━━━━ ADMIN LOGIN ━━━━
+async function doAdminLogin() {
+  const pin = ['p0','p1','p2','p3','p4','p5'].map(id => document.getElementById(id).value).join('');
+  if (pin.length < 6) { showLoginErr('Sila isi 6 digit PIN.'); return; }
+
+  const btn = document.getElementById('loginAdminBtn');
+  btn.disabled = true; btn.textContent = 'Mengesahkan...';
+
+  try {
+    const res  = await fetch(`${GAS_URL}?action=adminLogin&pin=${pin}`);
+    const json = await res.json();
+    if (json.success) {
+      adminPin = pin;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminApp').style.display = 'block';
+      loadAllStudents();
+    } else {
+      showLoginErr('PIN tidak sah. Cuba semula.');
+      ['p0','p1','p2','p3','p4','p5'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('p0').focus();
+    }
+  } catch(err) {
+    showLoginErr('Gagal sambung ke pelayan.');
+  }
+  btn.disabled = false; btn.textContent = 'Masuk';
+}
+
+function showLoginErr(msg) {
+  const el = document.getElementById('loginErr');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
+function doAdminLogout() {
+  adminPin = ''; allStudents = [];
+  document.getElementById('adminApp').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  ['p0','p1','p2','p3','p4','p5'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p0').focus();
+}
+
+// ━━━━ LOAD DATA ━━━━
+async function loadAllStudents() {
+  showLoading('Memuatkan data pelajar...');
+  try {
+    const res  = await fetch(`${GAS_URL}?action=getAllStudents&pin=${adminPin}`);
+    const json = await res.json();
+    if (json.success) {
+      allStudents = json.students;
+      renderAll();
+    }
+  } catch(err) { alert('Gagal muatkan data.'); }
+  hideLoading();
+}
+
+function renderAll() {
+  renderDashboard();
+  renderPelajarTable(allStudents);
+  renderSyarikat();
+  populateKursusFilter();
+}
+
+// ━━━━ DASHBOARD ━━━━
+function renderDashboard() {
+  const total = allStudents.length;
+  const lengkap = allStudents.filter(s => s.namaSyarikat && s.noTelSyarikat && s.namaPenyelia).length;
+  const tidakLengkap = allStudents.filter(s => !s.namaSyarikat).length;
+  const syarikatSet = new Set(allStudents.filter(s => s.namaSyarikat).map(s => s.namaSyarikat.trim().toLowerCase()));
+  const adaTel = allStudents.filter(s => s.noTel).length;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statLengkap').textContent = lengkap;
+  document.getElementById('statTidakLengkap').textContent = tidakLengkap;
+  document.getElementById('statSyarikat').textContent = syarikatSet.size;
+
+  const pct = total ? Math.round((allStudents.filter(s => s.namaSyarikat).length / total) * 100) : 0;
+  document.getElementById('progPct').textContent = pct + '%';
+  document.getElementById('progFill').style.width = pct + '%';
+
+  const telPct = total ? Math.round((adaTel / total) * 100) : 0;
+  document.getElementById('progTelPct').textContent = telPct + '%';
+  document.getElementById('progTelFill').style.width = telPct + '%';
+
+  // Belum isi
+  const belum = allStudents.filter(s => !s.namaSyarikat);
+  const tbody = document.getElementById('tbodyBelumIsi');
+  if (belum.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#bbb;padding:24px;font-style:italic;">Semua pelajar dah isi maklumat syarikat 🎉</td></tr>`;
+  } else {
+    tbody.innerHTML = belum.map((s,i) => `
+      <tr>
+        <td class="td-mono">${i+1}</td>
+        <td class="td-name">${s.nama}</td>
+        <td class="td-mono">${s.ndp}</td>
+        <td class="td-kursus">${s.kodKursus || '—'}</td>
+        <td>${s.noTel ? `<span class="badge ok">${s.noTel}</span>` : '<span class="badge nope">Tiada</span>'}</td>
+      </tr>`).join('');
+  }
+}
+
+// ━━━━ PELAJAR TABLE ━━━━
+function renderPelajarTable(list) {
+  filteredStudents = list;
+  const tbody = document.getElementById('tbodyPelajar');
+  document.getElementById('tblPelajarCount').textContent = `${list.length} pelajar dijumpai`;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#bbb;padding:32px;font-style:italic;">Tiada rekod ditemui</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(s => {
+    const status = getStatus(s);
+    return `<tr>
+      <td class="td-mono">${s.bil}</td>
+      <td class="td-name">${s.nama}</td>
+      <td class="td-mono">${s.ndp}</td>
+      <td class="td-kursus">${s.kodKursus || '<span style="color:#ccc">—</span>'}</td>
+      <td>${s.noTel || '<span style="color:#ccc">—</span>'}</td>
+      <td class="td-kursus">${s.namaSyarikat || '<span style="color:#ccc">—</span>'}</td>
+      <td><span class="badge ${status.cls}">${status.label}</span></td>
+      <td><button class="btn-detail" onclick='showDetail(${JSON.stringify(s).replace(/'/g,"&#39;")})'>Detail</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function getStatus(s) {
+  if (s.namaSyarikat && s.noTelSyarikat && s.namaPenyelia && s.alamatSyarikat && s.noTel)
+    return { cls: 'ok', label: 'Lengkap' };
+  if (s.namaSyarikat)
+    return { cls: 'partial', label: 'Sebahagian' };
+  return { cls: 'nope', label: 'Belum Isi' };
+}
+
+function filterPelajar() {
+  const q   = document.getElementById('searchPelajar').value.toLowerCase();
+  const st  = document.getElementById('filterStatus').value;
+  const krs = document.getElementById('filterKursus').value.toLowerCase();
+
+  let list = allStudents.filter(s => {
+    const matchQ = !q || s.nama.toLowerCase().includes(q) || s.ndp.includes(q) || (s.namaSyarikat||'').toLowerCase().includes(q);
+    const matchKrs = !krs || (s.kodKursus||'').toLowerCase().includes(krs);
+    let matchSt = true;
+    if (st === 'lengkap') matchSt = s.namaSyarikat && s.noTelSyarikat && s.namaPenyelia && s.alamatSyarikat && s.noTel;
+    if (st === 'partial') matchSt = s.namaSyarikat && !(s.noTelSyarikat && s.namaPenyelia && s.alamatSyarikat && s.noTel);
+    if (st === 'kosong')  matchSt = !s.namaSyarikat;
+    return matchQ && matchKrs && matchSt;
+  });
+  renderPelajarTable(list);
+}
+
+function populateKursusFilter() {
+  const kursusSet = new Set(allStudents.map(s => s.kodKursus).filter(Boolean));
+  const sel = document.getElementById('filterKursus');
+  kursusSet.forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k; opt.textContent = k;
+    sel.appendChild(opt);
+  });
+}
+
+// ━━━━ SYARIKAT ━━━━
+let allSyarikat = [];
+function renderSyarikat() {
+  const map = {};
+  allStudents.forEach(s => {
+    if (!s.namaSyarikat) return;
+    const key = s.namaSyarikat.trim();
+    if (!map[key]) map[key] = { nama: key, alamat: s.alamatSyarikat, noTel: s.noTelSyarikat, pelajar: [] };
+    map[key].pelajar.push(s.nama);
+  });
+  allSyarikat = Object.values(map).sort((a,b) => b.pelajar.length - a.pelajar.length);
+  renderSyarikatGrid(allSyarikat);
+}
+
+function renderSyarikatGrid(list) {
+  document.getElementById('syarikatCount').textContent = list.length + ' syarikat';
+  const grid = document.getElementById('syarikatGrid');
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏢</div><p>Tiada syarikat dijumpai</p></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(sy => `
+    <div class="syarikat-card">
+      <div class="syarikat-name">${sy.nama}</div>
+      <span class="syarikat-count">${sy.pelajar.length} pelajar</span>
+      ${sy.noTel ? `<div style="font-size:11px;color:var(--mid);margin-bottom:4px;">📞 ${sy.noTel}</div>` : ''}
+      ${sy.alamat ? `<div class="syarikat-addr">📍 ${sy.alamat.replace(/\n/g,'<br>')}</div>` : ''}
+      <details style="margin-top:10px;">
+        <summary style="font-size:11px;color:var(--blue);cursor:pointer;font-weight:600;">Lihat pelajar (${sy.pelajar.length})</summary>
+        <div style="margin-top:8px;font-size:11px;color:var(--mid);line-height:2;">
+          ${sy.pelajar.map((p,i) => `${i+1}. ${p}`).join('<br>')}
+        </div>
+      </details>
+    </div>`).join('');
+}
+
+function filterSyarikat() {
+  const q = document.getElementById('searchSyarikat').value.toLowerCase();
+  renderSyarikatGrid(q ? allSyarikat.filter(s => s.nama.toLowerCase().includes(q)) : allSyarikat);
+}
+
+// ━━━━ MODAL ━━━━
+function showDetail(s) {
+  document.getElementById('modalTitle').textContent = s.nama;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-section">
+      <div class="modal-section-title">Maklumat Peribadi</div>
+      ${mrow('Nama Penuh', s.nama)}
+      ${mrow('NDP', s.ndp)}
+      ${mrow('No. Kad Pengenalan', s.ic)}
+      ${mrow('Kod / Nama Kursus', s.kodKursus || null)}
+      ${mrow('No. Telefon', s.noTel || null)}
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Maklumat Syarikat LI</div>
+      ${mrow('Nama Syarikat', s.namaSyarikat || null)}
+      ${mrow('Alamat', s.alamatSyarikat ? s.alamatSyarikat.replace(/\n/g,'<br>') : null)}
+      ${mrow('No. Tel Syarikat', s.noTelSyarikat || null)}
+      ${mrow('Nama Penyelia', s.namaPenyelia || null)}
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Status</div>
+      <div style="padding:12px;background:var(--grey3);border-radius:4px;display:flex;align-items:center;gap:10px;">
+        ${(() => { const st = getStatus(s); return `<span class="badge ${st.cls}" style="font-size:12px;padding:4px 12px;">${st.label}</span>`; })()}
+        <span style="font-size:12px;color:var(--mid);">${getStatusDesc(s)}</span>
+      </div>
+    </div>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function getStatusDesc(s) {
+  const missing = [];
+  if (!s.noTel) missing.push('No. Telefon');
+  if (!s.namaSyarikat) missing.push('Nama Syarikat');
+  if (!s.alamatSyarikat) missing.push('Alamat');
+  if (!s.noTelSyarikat) missing.push('No. Tel Syarikat');
+  if (!s.namaPenyelia) missing.push('Nama Penyelia');
+  return missing.length ? 'Belum lengkap: ' + missing.join(', ') : 'Semua maklumat lengkap ✓';
+}
+
+function mrow(key, val) {
+  const empty = !val;
+  return `<div class="modal-row">
+    <span class="modal-key">${key}</span>
+    <span class="modal-val ${empty ? 'empty' : ''}">${empty ? 'Belum diisi' : val}</span>
+  </div>`;
+}
+
+function closeModal(e) { if (e.target === document.getElementById('modalOverlay')) closeModalBtn(); }
+function closeModalBtn() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+// ━━━━ NAV ━━━━
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ━━━━ EXCEL EXPORT ━━━━
+function exportExcel() {
+  if (!allStudents.length) { alert('Tiada data untuk dieksport.'); return; }
+  showLoading('Menjana fail Excel...');
+
+  const now = new Date();
+  const tarikh = now.toLocaleDateString('ms-MY');
+
+  // Sheet 1: Semua pelajar
+  const wsData = [
+    ['BIL', 'NAMA', 'NDP', 'NO. KAD PENGENALAN', 'KOD/NAMA KURSUS', 'NO. TELEFON', 'NAMA SYARIKAT LI', 'ALAMAT SYARIKAT', 'NO. TEL SYARIKAT', 'NAMA PENYELIA', 'STATUS']
+  ];
+  allStudents.forEach(s => {
+    wsData.push([
+      s.bil, s.nama, s.ndp, s.ic, s.kodKursus,
+      s.noTel, s.namaSyarikat, s.alamatSyarikat, s.noTelSyarikat, s.namaPenyelia,
+      getStatus(s).label
+    ]);
+  });
+
+  // Sheet 2: Belum isi
+  const belum = allStudents.filter(s => !s.namaSyarikat);
+  const wsBelum = [['BIL', 'NAMA', 'NDP', 'KURSUS', 'NO. TELEFON']];
+  belum.forEach((s,i) => wsBelum.push([i+1, s.nama, s.ndp, s.kodKursus, s.noTel]));
+
+  // Sheet 3: Syarikat
+  const wsSyarikat = [['NAMA SYARIKAT', 'ALAMAT', 'NO. TEL', 'BILANGAN PELAJAR', 'SENARAI PELAJAR']];
+  allSyarikat.forEach(sy => wsSyarikat.push([sy.nama, sy.alamat, sy.noTel, sy.pelajar.length, sy.pelajar.join(', ')]));
+
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.aoa_to_sheet(wsData);
+  const ws2 = XLSX.utils.aoa_to_sheet(wsBelum);
+  const ws3 = XLSX.utils.aoa_to_sheet(wsSyarikat);
+
+  // Column widths
+  ws1['!cols'] = [6,40,12,18,30,14,35,40,14,25,12].map(w => ({wch:w}));
+  ws2['!cols'] = [6,40,12,30,14].map(w => ({wch:w}));
+  ws3['!cols'] = [35,40,14,10,60].map(w => ({wch:w}));
+
+  XLSX.utils.book_append_sheet(wb, ws1, 'Semua Pelajar');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Belum Isi LI');
+  XLSX.utils.book_append_sheet(wb, ws3, 'Syarikat LI');
+
+  const filename = `LaporanLI_ADTEC_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xlsx`;
+  XLSX.writeFile(wb, filename);
+  hideLoading();
+}
+
+// ━━━━ PRINT REPORT ━━━━
+function printReport() {
+  if (!allStudents.length) { alert('Tiada data untuk dicetak.'); return; }
+
+  const now = new Date();
+  const tarikh = now.toLocaleDateString('ms-MY', {day:'2-digit', month:'long', year:'numeric'});
+  const total = allStudents.length;
+  const lengkap = allStudents.filter(s => s.namaSyarikat && s.noTelSyarikat && s.namaPenyelia && s.alamatSyarikat && s.noTel).length;
+  const belum = allStudents.filter(s => !s.namaSyarikat).length;
+  const adaTel = allStudents.filter(s => s.noTel).length;
+
+  const rows = allStudents.map(s => {
+    const st = getStatus(s);
+    return `<tr>
+      <td>${s.bil}</td>
+      <td style="font-weight:500">${s.nama}</td>
+      <td>${s.ndp}</td>
+      <td style="font-size:9pt">${s.kodKursus||'—'}</td>
+      <td>${s.noTel||'—'}</td>
+      <td style="font-size:9pt">${s.namaSyarikat||'—'}</td>
+      <td style="font-size:9pt">${s.namaPenyelia||'—'}</td>
+      <td><span style="display:inline-block;padding:2px 8px;border-radius:100px;font-size:8pt;font-weight:600;background:${st.cls==='ok'?'#dcfce7':st.cls==='partial'?'#fef9c3':'#fee2e2'};color:${st.cls==='ok'?'#15803d':st.cls==='partial'?'#92400e':'#b91c1c'}">${st.label}</span></td>
+    </tr>`;
+  }).join('');
+
+  const win = window.open('', '_blank', 'width=1100,height=800');
+  win.document.write(`
+    <html><head><meta charset="UTF-8">
+    <title>Laporan LI — ADTEC Kuantan</title>
+    <style>
+      @page { margin: 15mm; size: A4 landscape; }
+      body { font-family: Arial, sans-serif; font-size: 10pt; color: #000; }
+      .hdr { border-bottom: 3px solid #1354f9; padding-bottom: 14px; margin-bottom: 20px; display:flex; align-items:center; gap:16px; }
+      .hdr-info h1 { font-size: 16pt; font-weight: bold; color: #1354f9; margin-bottom: 2px; }
+      .hdr-info p { font-size: 9pt; color: #666; }
+      .stats { display:flex; gap:16px; margin-bottom:20px; }
+      .stat { flex:1; background:#f4f4f4; border-radius:6px; padding:12px; text-align:center; }
+      .stat-n { font-size:22pt; font-weight:bold; color:#1354f9; }
+      .stat-l { font-size:9pt; color:#666; }
+      table { width:100%; border-collapse:collapse; font-size:9pt; }
+      th { background:#1354f9; color:#fff; padding:7px 10px; text-align:left; font-size:8pt; text-transform:uppercase; letter-spacing:0.5px; }
+      td { padding:7px 10px; border-bottom:1px solid #eee; vertical-align:middle; }
+      tr:nth-child(even) td { background:#f9f9f9; }
+      .footer { margin-top:20px; border-top:1px solid #ddd; padding-top:10px; display:flex; justify-content:space-between; font-size:8pt; color:#999; }
+    </style>
+    </head><body>
+    <div class="hdr">
+      <div style="width:56px;height:56px;background:#f4f4f4;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10pt;font-weight:bold;color:#1354f9;">ADTEC</div>
+      <div class="hdr-info">
+        <h1>Laporan Latihan Industri — ADTEC Kuantan</h1>
+        <p>Jabatan Tenaga Manusia Malaysia &nbsp;|&nbsp; Tarikh Cetak: ${tarikh}</p>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">Jumlah Pelajar</div></div>
+      <div class="stat"><div class="stat-n" style="color:#15803d">${lengkap}</div><div class="stat-l">Maklumat Lengkap</div></div>
+      <div class="stat"><div class="stat-n" style="color:#b91c1c">${belum}</div><div class="stat-l">Belum Isi Syarikat</div></div>
+      <div class="stat"><div class="stat-n" style="color:#d97706">${adaTel}</div><div class="stat-l">Ada No. Telefon</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Bil</th><th>Nama</th><th>NDP</th><th>Kursus</th><th>No. Tel</th><th>Syarikat LI</th><th>Nama Penyelia</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="footer">
+      <span>Portal Latihan Industri — ADTEC Kuantan © 2026</span>
+      <span>Dijana secara automatik oleh sistem</span>
+    </div>
+    </body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 600);
+}
+
+// ━━━━ HELPERS ━━━━
+function showLoading(msg) {
+  document.getElementById('loadingText').textContent = msg || 'Memuatkan...';
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+</script>
+</body>
+</html>
