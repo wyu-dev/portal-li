@@ -718,44 +718,66 @@ let filteredStudents = [];
 let adminPin = "";
 
 // ━━━━ PIN INPUT LOGIC ━━━━
-document.querySelectorAll('.pin-input').forEach((inp, idx, arr) => {
+const pinIds = ['p0','p1','p2','p3','p4','p5'];
+
+pinIds.forEach((id, idx) => {
+  const inp = document.getElementById(id);
+
   inp.addEventListener('input', () => {
+    // Buang bukan nombor, ambil satu digit je
     inp.value = inp.value.replace(/\D/g, '').slice(-1);
-    if (inp.value && idx < arr.length - 1) arr[idx + 1].focus();
-    if (idx === arr.length - 1 && inp.value) doAdminLogin();
+    // Auto-advance ke kotak seterusnya
+    if (inp.value !== '' && idx < pinIds.length - 1) {
+      document.getElementById(pinIds[idx + 1]).focus();
+    }
+    // Auto-submit bila kotak terakhir diisi
+    if (idx === pinIds.length - 1 && inp.value !== '') {
+      doAdminLogin();
+    }
   });
+
   inp.addEventListener('keydown', e => {
-    if (e.key === 'Backspace' && !inp.value && idx > 0) arr[idx - 1].focus();
+    if (e.key === 'Backspace' && inp.value === '' && idx > 0) {
+      document.getElementById(pinIds[idx - 1]).focus();
+    }
     if (e.key === 'Enter') doAdminLogin();
   });
+
+  // Prevent paste lebih dari 1 char
+  inp.addEventListener('paste', e => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+    // Isi dari kotak semasa
+    [...text].slice(0, pinIds.length - idx).forEach((ch, i) => {
+      const el = document.getElementById(pinIds[idx + i]);
+      if (el) el.value = ch;
+    });
+    // Focus ke kotak seterusnya selepas paste
+    const nextIdx = Math.min(idx + text.length, pinIds.length - 1);
+    document.getElementById(pinIds[nextIdx]).focus();
+    if (nextIdx === pinIds.length - 1 && text.length >= pinIds.length - idx) {
+      doAdminLogin();
+    }
+  });
 });
+
 document.getElementById('p0').focus();
 
-// ━━━━ ADMIN LOGIN ━━━━
-async function doAdminLogin() {
-  const pin = ['p0','p1','p2','p3','p4','p5'].map(id => document.getElementById(id).value).join('');
+// ━━━━ ADMIN LOGIN — verify local, tak perlu call GAS ━━━━
+function doAdminLogin() {
+  const pin = pinIds.map(id => document.getElementById(id).value).join('');
   if (pin.length < 6) { showLoginErr('Sila isi 6 digit PIN.'); return; }
 
-  const btn = document.getElementById('loginAdminBtn');
-  btn.disabled = true; btn.textContent = 'Mengesahkan...';
-
-  try {
-    const res  = await fetch(`${GAS_URL}?action=adminLogin&pin=${pin}`);
-    const json = await res.json();
-    if (json.success) {
-      adminPin = pin;
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('adminApp').style.display = 'block';
-      loadAllStudents();
-    } else {
-      showLoginErr('PIN tidak sah. Cuba semula.');
-      ['p0','p1','p2','p3','p4','p5'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('p0').focus();
-    }
-  } catch(err) {
-    showLoginErr('Gagal sambung ke pelayan.');
+  if (pin === ADMIN_PIN) {
+    adminPin = pin;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminApp').style.display = 'block';
+    loadAllStudents();
+  } else {
+    showLoginErr('PIN tidak sah. Cuba semula.');
+    pinIds.forEach(id => document.getElementById(id).value = '');
+    document.getElementById('p0').focus();
   }
-  btn.disabled = false; btn.textContent = 'Masuk';
 }
 
 function showLoginErr(msg) {
