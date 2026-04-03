@@ -658,7 +658,13 @@ tr:hover td { background: var(--grey3); }
       <!-- Toolbar -->
       <div class="tbl-toolbar">
         <input class="tbl-search" type="text" id="searchHadir" placeholder="🔍  Cari nama, NDP..." oninput="filterHadir()" />
-        <input type="date" class="tbl-filter" id="filterTarikh" onchange="filterHadir()" />
+        <select class="tbl-filter" id="filterHadirKursus" onchange="filterHadir()">
+          <option value="">Semua Kursus</option>
+        </select>
+        <select class="tbl-filter" id="filterHadirBulan" onchange="filterHadir()">
+          <option value="">Semua Bulan</option>
+        </select>
+        <input type="date" class="tbl-filter" id="filterTarikh" onchange="filterHadir()" title="Filter tarikh spesifik" />
         <select class="tbl-filter" id="filterHadirStatus" onchange="filterHadir()">
           <option value="">Semua Status</option>
           <option value="Hadir">Hadir</option>
@@ -668,6 +674,7 @@ tr:hover td { background: var(--grey3); }
           <option value="Cuti Kecemasan">Cuti Kecemasan</option>
           <option value="Lain-lain">Lain-lain</option>
         </select>
+        <button class="btn-action outline" onclick="resetHadirFilter()">↺ Reset</button>
         <button class="btn-action yellow" onclick="exportHadirExcel()">📥 Excel</button>
         <button class="btn-action outline" onclick="printHadirReport()">🖨️ Cetak</button>
       </div>
@@ -1126,17 +1133,82 @@ async function loadAdminHadir() {
       allHadir = json.rekod;
       hadirAdminLoaded = true;
       renderHadirStat();
-      renderHadirTable(allHadir);
-      // Set default date filter ke hari ini
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('filterTarikh').value = today;
+      populateHadirFilters();
+      // Default — bulan semasa
+      const now = new Date();
+      const bulanVal = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      document.getElementById('filterHadirBulan').value = bulanVal;
       filterHadir();
     }
   } catch(err) { alert('Gagal muatkan data kehadiran.'); }
   hideLoading();
 }
 
-function renderHadirStat() {
+function populateHadirFilters() {
+  // Kursus
+  const kursusSet = new Set(allHadir.map(r => r.kodKursus).filter(Boolean));
+  const selKursus = document.getElementById('filterHadirKursus');
+  selKursus.innerHTML = '<option value="">Semua Kursus</option>';
+  [...kursusSet].sort().forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k; opt.textContent = k;
+    selKursus.appendChild(opt);
+  });
+
+  // Bulan — dari tarikh rekod
+  const bulanSet = new Set();
+  allHadir.forEach(r => {
+    if (!r.tarikh) return;
+    const p = r.tarikh.split('/');
+    if (p.length === 3) bulanSet.add(`${p[2]}-${p[1]}`);
+  });
+  const selBulan = document.getElementById('filterHadirBulan');
+  selBulan.innerHTML = '<option value="">Semua Bulan</option>';
+  [...bulanSet].sort().reverse().forEach(b => {
+    const [yr, mo] = b.split('-');
+    const label = new Date(yr, mo-1, 1).toLocaleDateString('ms-MY', {month:'long', year:'numeric'});
+    const opt = document.createElement('option');
+    opt.value = b; opt.textContent = label;
+    selBulan.appendChild(opt);
+  });
+}
+
+function resetHadirFilter() {
+  document.getElementById('searchHadir').value       = '';
+  document.getElementById('filterHadirKursus').value = '';
+  document.getElementById('filterHadirBulan').value  = '';
+  document.getElementById('filterTarikh').value      = '';
+  document.getElementById('filterHadirStatus').value = '';
+  filterHadir();
+}
+
+function filterHadir() {
+  const q      = document.getElementById('searchHadir').value.toLowerCase();
+  const kursus = document.getElementById('filterHadirKursus').value;
+  const bulan  = document.getElementById('filterHadirBulan').value; // yyyy-MM
+  const tgl    = document.getElementById('filterTarikh').value;     // yyyy-MM-dd
+  const st     = document.getElementById('filterHadirStatus').value;
+
+  let list = allHadir.filter(r => {
+    const matchQ      = !q      || r.nama.toLowerCase().includes(q) || r.ndp.includes(q);
+    const matchKursus = !kursus || r.kodKursus === kursus;
+    const matchSt     = !st     || r.status === st;
+
+    let matchTgl = true;
+    if (tgl) {
+      // Tarikh spesifik — lebih utama dari bulan
+      const p = tgl.split('-');
+      matchTgl = r.tarikh === `${p[2]}/${p[1]}/${p[0]}`;
+    } else if (bulan) {
+      // Bulan — dd/MM/yyyy → ambil MM dan yyyy
+      const p = r.tarikh ? r.tarikh.split('/') : [];
+      matchTgl = p.length === 3 && `${p[2]}-${p[1]}` === bulan;
+    }
+
+    return matchQ && matchKursus && matchSt && matchTgl;
+  });
+  renderHadirTable(list);
+}
   const total   = allHadir.length;
   const hadir   = allHadir.filter(r => r.status === 'Hadir').length;
   const tidak   = allHadir.filter(r => r.status === 'Tidak Hadir').length;
@@ -1153,26 +1225,6 @@ function renderHadirStat() {
     <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-num">${hadir}</div><div class="stat-label">Hadir (Keseluruhan)</div></div>
     <div class="stat-card red"><div class="stat-icon">❌</div><div class="stat-num">${tidak}</div><div class="stat-label">Tidak Hadir</div></div>
     <div class="stat-card yellow"><div class="stat-icon">📅</div><div class="stat-num">${hadirHariIni}</div><div class="stat-label">Tandak Hari Ini</div></div>`;
-}
-
-function filterHadir() {
-  const q   = document.getElementById('searchHadir').value.toLowerCase();
-  const tgl = document.getElementById('filterTarikh').value; // yyyy-mm-dd
-  const st  = document.getElementById('filterHadirStatus').value;
-
-  let list = allHadir.filter(r => {
-    const matchQ  = !q  || r.nama.toLowerCase().includes(q) || r.ndp.includes(q);
-    const matchSt = !st || r.status === st;
-    let matchTgl  = true;
-    if (tgl) {
-      // convert filter date yyyy-mm-dd to dd/MM/yyyy untuk compare
-      const parts = tgl.split('-');
-      const tglMY = `${parts[2]}/${parts[1]}/${parts[0]}`;
-      matchTgl = r.tarikh === tglMY;
-    }
-    return matchQ && matchSt && matchTgl;
-  });
-  renderHadirTable(list);
 }
 
 function renderHadirTable(list) {
