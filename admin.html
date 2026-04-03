@@ -717,7 +717,6 @@ tr:hover td { background: var(--grey3); }
 <script>
 // GAS_URL diambil dari config.js
 const ADMIN_PIN = "000777";
-const pinIds = ['p0','p1','p2','p3','p4','p5'];
 
 let allStudents = [];
 let filteredStudents = [];
@@ -1196,12 +1195,11 @@ function filterHadir() {
   });
   renderHadirTable(list);
 }
+
+function renderHadirStat() {
   const total   = allHadir.length;
   const hadir   = allHadir.filter(r => r.status === 'Hadir').length;
   const tidak   = allHadir.filter(r => r.status === 'Tidak Hadir').length;
-  const luar    = allHadir.filter(r => r.status === 'Tugasan Luar').length;
-  const sakit   = allHadir.filter(r => r.status === 'Cuti Sakit').length;
-  const kecemas = allHadir.filter(r => r.status === 'Cuti Kecemasan').length;
 
   // Unik pelajar yang dah rekod hari ini
   const todayStr = formatDateMY(new Date());
