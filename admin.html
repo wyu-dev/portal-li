@@ -712,25 +712,22 @@ tr:hover td { background: var(--grey3); }
 <script>
 // GAS_URL diambil dari config.js
 const ADMIN_PIN = "000777";
+const pinIds = ['p0','p1','p2','p3','p4','p5'];
 
 let allStudents = [];
 let filteredStudents = [];
 let adminPin = "";
 
-// ━━━━ PIN INPUT LOGIC ━━━━
-const pinIds = ['p0','p1','p2','p3','p4','p5'];
+document.addEventListener('DOMContentLoaded', function() {
 
 pinIds.forEach((id, idx) => {
   const inp = document.getElementById(id);
 
   inp.addEventListener('input', () => {
-    // Buang bukan nombor, ambil satu digit je
     inp.value = inp.value.replace(/\D/g, '').slice(-1);
-    // Auto-advance ke kotak seterusnya
     if (inp.value !== '' && idx < pinIds.length - 1) {
       document.getElementById(pinIds[idx + 1]).focus();
     }
-    // Auto-submit bila kotak terakhir diisi
     if (idx === pinIds.length - 1 && inp.value !== '') {
       doAdminLogin();
     }
@@ -743,16 +740,13 @@ pinIds.forEach((id, idx) => {
     if (e.key === 'Enter') doAdminLogin();
   });
 
-  // Prevent paste lebih dari 1 char
   inp.addEventListener('paste', e => {
     e.preventDefault();
     const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
-    // Isi dari kotak semasa
     [...text].slice(0, pinIds.length - idx).forEach((ch, i) => {
       const el = document.getElementById(pinIds[idx + i]);
       if (el) el.value = ch;
     });
-    // Focus ke kotak seterusnya selepas paste
     const nextIdx = Math.min(idx + text.length, pinIds.length - 1);
     document.getElementById(pinIds[nextIdx]).focus();
     if (nextIdx === pinIds.length - 1 && text.length >= pinIds.length - idx) {
@@ -762,6 +756,8 @@ pinIds.forEach((id, idx) => {
 });
 
 document.getElementById('p0').focus();
+
+}); // end DOMContentLoaded
 
 // ━━━━ ADMIN LOGIN — verify local, tak perlu call GAS ━━━━
 function doAdminLogin() {
