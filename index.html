@@ -559,6 +559,84 @@ input::placeholder, textarea::placeholder { color: #bbb; }
   60% { transform:translateX(-5px); }
   80% { transform:translateX(5px); }
 }
+/* ── RICH TEXT EDITOR ── */
+.rte-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  background: var(--grey);
+  border: 1.5px solid var(--grey2);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 8px 10px;
+}
+.rte-btn {
+  background: var(--white);
+  border: 1px solid var(--grey2);
+  border-radius: 4px;
+  padding: 5px 9px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--black);
+  transition: all 0.15s;
+  line-height: 1;
+}
+.rte-btn:hover { background: var(--blue-lt); border-color: var(--blue); color: var(--blue); }
+.rte-sel {
+  background: var(--white);
+  border: 1px solid var(--grey2);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--black);
+  cursor: pointer;
+}
+.rte-sep { width: 1px; height: 20px; background: var(--grey2); margin: 0 3px; }
+.rte-editor {
+  min-height: 180px;
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--white);
+  border: 1.5px solid var(--grey2);
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--black);
+  outline: none;
+}
+.rte-editor:focus { border-color: var(--blue); }
+.rte-editor[placeholder]:empty::before {
+  content: attr(placeholder);
+  color: #bbb;
+  pointer-events: none;
+}
+.rte-editor img { max-width: 100%; border-radius: 4px; margin: 6px 0; }
+
+/* Log rekod cards */
+.log-card {
+  background: var(--white);
+  border: 1px solid var(--grey2);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.log-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--grey);
+  border-bottom: 1px solid var(--grey2);
+  gap: 10px;
+}
+.log-card-tarikh { font-size: 12px; font-weight: 700; color: var(--black); }
+.log-card-ts { font-size: 10px; color: var(--mid); }
+.log-card-body { padding: 14px 16px; font-size: 13px; line-height: 1.7; }
+.log-card-body img { max-width: 100%; border-radius: 4px; }
+
 .shake { animation: shake 0.4s ease; }
 </style>
 </head>
@@ -643,6 +721,7 @@ input::placeholder, textarea::placeholder { color: #bbb; }
       <button class="tab-btn active" onclick="switchTab('maklumat', this)">📋 Maklumat</button>
       <button class="tab-btn" onclick="switchTab('syarikat', this)">🏢 Syarikat</button>
       <button class="tab-btn" onclick="switchTab('hadir', this); loadHadir()">🗓️ Hadir</button>
+      <button class="tab-btn" onclick="switchTab('log', this); loadLog()">📝 Log</button>
     </div>
 
     <!-- TAB: Maklumat Diri -->
@@ -746,6 +825,63 @@ input::placeholder, textarea::placeholder { color: #bbb; }
 
       <!-- Senarai rekod -->
       <div id="hadirRekodBox">
+        <div style="text-align:center;padding:16px;color:var(--mid);font-size:12px;">—</div>
+      </div>
+
+    </div>
+
+    <!-- TAB: Log Harian -->
+    <div class="tab-panel" id="tab-log">
+
+      <!-- Tulis log hari ini -->
+      <div class="sect">Log Harian — <span id="logTarikhLabel" style="color:var(--blue)"></span></div>
+      <div id="logTodayBox">
+
+        <!-- Toolbar rich text -->
+        <div class="rte-toolbar">
+          <button class="rte-btn" onclick="rteCmd('bold')" title="Bold"><b>B</b></button>
+          <button class="rte-btn" onclick="rteCmd('italic')" title="Italic"><i>I</i></button>
+          <button class="rte-btn" onclick="rteCmd('underline')" title="Underline"><u>U</u></button>
+          <div class="rte-sep"></div>
+          <select class="rte-sel" onchange="rteCmd('fontSize', this.value); this.value=''" title="Saiz teks">
+            <option value="">Saiz</option>
+            <option value="1">Kecil</option>
+            <option value="3">Normal</option>
+            <option value="5">Besar</option>
+            <option value="7">Besar sekali</option>
+          </select>
+          <div class="rte-sep"></div>
+          <button class="rte-btn" onclick="rteCmd('justifyLeft')" title="Kiri">⬅</button>
+          <button class="rte-btn" onclick="rteCmd('justifyCenter')" title="Tengah">↔</button>
+          <button class="rte-btn" onclick="rteCmd('justifyRight')" title="Kanan">➡</button>
+          <div class="rte-sep"></div>
+          <button class="rte-btn" onclick="rteCmd('insertUnorderedList')" title="Senarai">• —</button>
+          <button class="rte-btn" onclick="rteCmd('insertOrderedList')" title="Senarai nombor">1.</button>
+          <div class="rte-sep"></div>
+          <button class="rte-btn" onclick="insertImg()" title="Masukkan gambar">🖼</button>
+          <input type="file" id="imgUpload" accept="image/*" style="display:none" onchange="handleImgUpload(event)" />
+        </div>
+
+        <!-- Editor area -->
+        <div
+          id="rteEditor"
+          contenteditable="true"
+          class="rte-editor"
+          placeholder="Tulis log harian anda di sini..."
+        ></div>
+
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button class="btn" style="flex:1" onclick="saveLog()">Simpan Log</button>
+          <button class="btn" style="flex:none; background:var(--grey2); color:var(--mid); font-size:13px; padding:14px 16px;" onclick="clearEditor()" title="Padam kandungan editor">🗑</button>
+        </div>
+        <div class="status" id="logStatus"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Senarai log lepas -->
+      <div class="sect">Rekod Log Saya</div>
+      <div id="logRekodBox">
         <div style="text-align:center;padding:16px;color:var(--mid);font-size:12px;">—</div>
       </div>
 
@@ -887,6 +1023,115 @@ function showStatus(id, type, msg) {
   el.className = 'status ' + type;
   el.textContent = msg;
   el.style.display = 'block';
+}
+
+// ━━━━ RICH TEXT EDITOR ━━━━
+function rteCmd(cmd, val) {
+  document.getElementById('rteEditor').focus();
+  document.execCommand(cmd, false, val || null);
+}
+
+function insertImg() {
+  document.getElementById('imgUpload').click();
+}
+
+function handleImgUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    document.getElementById('rteEditor').focus();
+    document.execCommand('insertImage', false, ev.target.result);
+  };
+  reader.readAsDataURL(file);
+  e.target.value = ''; // reset supaya boleh upload gambar sama lagi
+}
+
+function clearEditor() {
+  if (confirm('Padam kandungan editor?')) {
+    document.getElementById('rteEditor').innerHTML = '';
+  }
+}
+
+// ━━━━ LOG HARIAN ━━━━
+let logLoaded = false;
+
+function loadLog() {
+  // Set label tarikh hari ini
+  const now = new Date();
+  const label = now.toLocaleDateString('ms-MY', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  document.getElementById('logTarikhLabel').textContent = label;
+
+  if (!logLoaded) {
+    loadLogRekod();
+    // Semak log hari ini untuk pre-fill editor
+    checkLogHariIni();
+  }
+}
+
+async function checkLogHariIni() {
+  try {
+    const res  = await fetch(`${GAS_URL}?action=checkLog&ndp=${encodeURIComponent(session.ndp)}&ic=${encodeURIComponent(session.ic)}`);
+    const json = await res.json();
+    if (json.success && json.adaLog) {
+      document.getElementById('rteEditor').innerHTML = json.kandungan;
+    }
+  } catch(err) {}
+}
+
+async function saveLog() {
+  const kandungan = document.getElementById('rteEditor').innerHTML.trim();
+  if (!kandungan || kandungan === '<br>') {
+    showStatus('logStatus','error','Sila tulis sesuatu sebelum simpan.'); return;
+  }
+  showStatus('logStatus','loading','Menyimpan log...');
+
+  try {
+    const payload = {
+      action    : 'submitLog',
+      ndp       : session.ndp,
+      ic        : session.ic,
+      kandungan : kandungan
+    };
+    const res  = await fetch(GAS_URL, { method:'POST', body: JSON.stringify(payload) });
+    const json = await res.json();
+    if (json.success) {
+      showStatus('logStatus','success','✓ Log berjaya disimpan.');
+      logLoaded = false;
+      loadLogRekod();
+    } else {
+      showStatus('logStatus','error', json.message || 'Gagal simpan.');
+    }
+  } catch(err) {
+    showStatus('logStatus','error','Gagal sambung ke pelayan.');
+  }
+}
+
+async function loadLogRekod() {
+  const box = document.getElementById('logRekodBox');
+  box.innerHTML = `<div style="text-align:center;padding:12px;color:var(--mid);font-size:12px;">Memuatkan...</div>`;
+
+  try {
+    const res  = await fetch(`${GAS_URL}?action=getMyLog&ndp=${encodeURIComponent(session.ndp)}&ic=${encodeURIComponent(session.ic)}`);
+    const json = await res.json();
+    logLoaded = true;
+
+    if (!json.success || !json.rekod.length) {
+      box.innerHTML = `<div style="text-align:center;padding:20px;color:#bbb;font-size:12px;font-style:italic;">Tiada log lagi. Mula tulis hari ini!</div>`;
+      return;
+    }
+
+    box.innerHTML = json.rekod.map(r => `
+      <div class="log-card">
+        <div class="log-card-head">
+          <span class="log-card-tarikh">📅 ${r.tarikh}</span>
+          <span class="log-card-ts">${r.timestamp}</span>
+        </div>
+        <div class="log-card-body">${r.kandungan}</div>
+      </div>`).join('');
+  } catch(err) {
+    box.innerHTML = `<div style="color:var(--error);font-size:12px;padding:12px;">Gagal muatkan log.</div>`;
+  }
 }
 
 // ━━━━ KEHADIRAN ━━━━

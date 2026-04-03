@@ -6,4 +6,4 @@
 // Fail ini digunakan oleh index.html dan admin.html.
 // ============================================================
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxdZu_lqxhFJtVb5-zEj2LuQegvkW6QaVWKGZ6c9Pmzc6MBsAzaFuhB3Oz2bxiphm1tKw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxYjRw9Cfz7qXjsZyYHwjvsZ7mugzNq948n1mDBg-0AL9Xh2q8rx1IMvvnWNSB5_jgMGQ/exec";
